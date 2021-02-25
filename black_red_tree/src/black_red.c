@@ -1,190 +1,305 @@
+/** C implementation for 
+	Red-Black Tree Insertion 
+	This code is provided by 
+	costheta_z modified by 
+    Alex Raimundo de Oliveira.
+    Original code in: 
+    https://www.geeksforgeeks.org/c-program-red-black-tree-insertion/ **/
+
+#include <stdio.h> 
+#include <stdlib.h> 
 #include "black_red.h"
+#include "ReadFile.h"
+#define COUNT 10
 
-#define Black false //Black
-#define Red true  //Red
+Node *root = NULL;
 
-//Cria nós para facilitar a manipulação
-Node* newNode(int r){
-    Node *node = (Node*)malloc(sizeof(Node));
-    node->record.key = r;
-    node->color = Red;
-    node->right = NULL;
-    node->left = NULL;
-    node->parent = NULL;
-
-    return node;
+void setRoot(Node *node){
+	root = node;
 }
 
-//*tree está se referindo à raiz.
+Node* getRoot(){
+	return root;
+}
 
-void insert(Node **tree, Node *z){
-    Node *y = NULL;
-    Node *x = *tree; 
-    while(x != NULL){
-        y = x;
-        if(z->record.key < x->record.key)
-            x = x->left;
-        else
-            x = x->right;
+Node* newNode(Record r){
+	Node *temp = (Node*)malloc(sizeof(Node)); 
+	temp->r = NULL; 
+	temp->l = NULL; 
+	temp->p = NULL; 
+	temp->record.word = r.word;
+	temp->record.description = r.description; 
+	temp->color = Red; 
+	
+	return temp;
+}
+
+// function to perform BST insertion of a node 
+Node* insert(Node *trav, Node *temp){ 
+	/*strcmp(const char *str1, const char *str2), 
+	serve para comparar duas strings e retorna:
+		< 0 se str1 menor que str2
+		> 0 se str1 maior que str2
+		= 0 se str1 igual a str2 */
+	int compare = 0;
+	if(trav != NULL && temp->record.word != NULL && trav->record.word != NULL)
+		compare = strcmp(temp->record.word,trav->record.word); 
+	
+	// If the tree is empty, 
+	// return a new node 
+	if (trav == NULL) 
+		return temp; 
+	
+	// Otherwise recur down the tree
+	if (compare < 0){ 
+		trav->l = insert(trav->l, temp); 
+		trav->l->p = trav; 
+	}else if (compare > 0){ 
+		trav->r = insert(trav->r, temp); 
+		trav->r->p = trav; 
+	} 
+
+	// Return the (unchanged) node pointer 
+	return trav; 
+} 
+
+// Function performing right rotation 
+// of the passed node 
+void rightrotate(Node *temp) 
+{ 
+	Node *left = temp->l; 
+	temp->l = left->r; 
+	if (left->r != NULL) 
+		left->r->p = temp; 
+	left->p = temp->p; 
+	if (!temp->p) 
+		root = left; 
+	else if (temp == temp->p->r) 
+		temp->p->r = left; 
+	else
+		temp->p->l = left; 
+	left->r = temp; 
+	temp->p = left; 
+} 
+
+// Function performing left rotation 
+// of the passed node 
+void leftrotate(Node *temp) 
+{ 
+	Node *right = temp->r; 
+	temp->r = right->l; 
+	if (right->l != NULL) 
+		right->l->p = temp; 
+	right->p = temp->p; 
+	if (!temp->p) 
+		root = right; 
+	else if (temp == temp->p->l) 
+		temp->p->l = right; 
+	else
+		temp->p->r = right; 
+	right->l = temp; 
+	temp->p = right; 
+} 
+
+// This function fixes violations 
+// caused by BST insertion 
+void insertFixup(Node *root, Node *pt){ 
+	Node *parent_pt = NULL; 
+	Node *grand_parent_pt = NULL; 
+
+	while ((pt != root) && (pt->color != Black) 
+		&& (pt->p->color == Red)) 
+	{ 
+		parent_pt = pt->p; 
+		grand_parent_pt = pt->p->p; 
+
+		/* Case : A 
+			Parent of pt is left child 
+			of Grand-parent of 
+		pt */
+		if (parent_pt == grand_parent_pt->l) 
+		{ 
+
+			Node *uncle_pt = grand_parent_pt->r; 
+
+			/* Case : 1 
+				The uncle of pt is also red 
+				Only Recoloring required */
+			if (uncle_pt != NULL && uncle_pt->color == Red) 
+			{ 
+				grand_parent_pt->color = Red; 
+				parent_pt->color = Black; 
+				uncle_pt->color = Black; 
+				pt = grand_parent_pt; 
+			} 
+
+			else { 
+
+				/* Case : 2 
+					pt is right child of its parent 
+					Left-rotation required */
+				if (pt == parent_pt->r) { 
+					pt = parent_pt;
+					leftrotate(pt); 
+					//parent_pt = pt->p; 
+				} 
+
+				/* Case : 3 
+					pt is left child of its parent 
+					Right-rotation required */
+				parent_pt->color = Black; 
+				grand_parent_pt->color = Red;
+				rightrotate(grand_parent_pt); 
+				//int t = parent_pt->color;
+				//pt = parent_pt; 
+			} 
+		} 
+
+		/* Case : B 
+			Parent of pt is right 
+			child of Grand-parent of 
+		pt */
+		else { 
+			Node *uncle_pt = grand_parent_pt->l; 
+
+			/* Case : 1 
+				The uncle of pt is also red 
+				Only Recoloring required */
+			if ((uncle_pt != NULL) && (uncle_pt->color == Red)) 
+			{ 
+				grand_parent_pt->color = Red; 
+				parent_pt->color = Black; 
+				uncle_pt->color = Black; 
+				pt = grand_parent_pt; 
+			} 
+			else { 
+				/* Case : 2 
+				pt is left child of its parent 
+				Right-rotation required */
+				if (pt == parent_pt->l) { 
+					pt = parent_pt; 
+					rightrotate(pt); 
+					//parent_pt = pt->p; 
+				} 
+
+				/* Case : 3 
+					pt is right child of its parent 
+					Left-rotation required */
+				
+				parent_pt->color = Black;
+				grand_parent_pt->color = Red;
+				leftrotate(grand_parent_pt); 
+				//int t = parent_pt->color;  
+				//pt = parent_pt; 
+			} 
+		} 
+	} 
+
+	root->color = Black; 
+} 
+
+//Funções para imprimir a árvore com a descrição
+void central(Node *trav) 
+{ 
+	if (trav == NULL) 
+		return; 
+	central(trav->l); 
+	printf("%s: %s\n", trav->record.word, trav->record.description); 
+	central(trav->r); 
+}
+
+void preOrdem(Node *trav){
+    if(!(trav == NULL)){
+        printf("%s: %s\n", trav->record.word, trav->record.description);
+        preOrdem(trav->l);
+        preOrdem(trav->r);
     }
-    z->parent = y;
-    if(y == NULL)
-        *tree = z;
-    else if(x != NULL){
-        if(z->record.key < x->record.key)
-            y->left = z;
+}
+
+void posOrdem(Node *trav){
+    if(!(trav == NULL)){
+        posOrdem(trav->l);
+        posOrdem(trav->r);
+        printf("%s: %s\n", trav->record.word, trav->record.description);
     }
-    else
-        y->right = z;
-    z->left = NULL;
-    z->right = NULL;
-    z->color = Red;
-    insertFixup(tree,z);
+}
+//Funções para imprimir a árvore com as cores
+void centralColor(Node *trav) 
+{ 
+	if (trav == NULL) 
+		return; 
+	centralColor(trav->l); 
+	if(trav->color == Black){
+		printf("Black: ");
+	}
+	else if(trav->color == Red){
+		printf("Red: ");
+	}
+	printf("%s\n", trav->record.word); 
+	centralColor(trav->r); 
 }
 
-void insertFixup(Node **tree, Node *z){
-    if(z->parent != NULL){
-        while(z->parent->color == Red){
-            if(z->parent == z->parent->parent->left){
-                Node *y = z->parent->parent->right;
-                if(y->color == Red){
-                    z->parent->color = Black;
-                    y->color = Black;
-                    z->parent->parent->color = Red;
-                    z = z->parent->parent;
-                }
-                else if(z == z->parent->right){
-                    z = z->parent;
-                    leftRotate(tree, z);
-                }
-                z->parent->color = Black;
-                z->parent->parent->color = Red;
-                rightRotate(tree, z);
-            }
-            else{
-                Node *y = z->parent->parent->left;
-                if(y->color == Red){
-                    z->parent->color = Black;
-                    y->color = Black;
-                    z->parent->parent->color = Red;
-                    z = z->parent->parent;
-                }
-                else if(z == z->parent->left){
-                    z = z->parent;
-                    leftRotate(tree, z);
-                }
-                z->parent->color = Black;
-                z->parent->parent->color = Red;
-                rightRotate(tree, z);
-            }
-        }
-    }
-    (*tree)->color = Black;
-}
-
-void leftRotate(Node **tree, Node *x){
-    Node *y = x->right; //Define y e recebe a subárvore à direita de x
-    x->right = y->left; //Transforma a subárvore à direita de x na esquerda de y
-    if(y->left != NULL)
-        y->left->parent = x;
-    y->parent = x->parent; //Liga o pai de x a y
-    if(x->parent == NULL)
-        *tree = y;
-    else if(x == x->parent->left)
-        x->parent->left = y;
-    else 
-        x->parent->right = y;
-    y->left = x; //Coloca o x à esquerda de y
-    x->parent = y;
-}
-
-void rightRotate(Node **tree, Node *x){
-    Node *y = x->left; //Define y e recebe a subárvore à esquerda de x
-    x->left = y->right; //Transforma a subárvore à esquerda de x na direita de y
-    if(y->right != NULL)
-        y->right->parent = x;
-    y->parent = x->parent; //Liga o pai de x a y
-    if(x->parent == NULL)
-        *tree = y;
-    else if(x == x->parent->right)
-        x->parent->right = y;
-    else
-        x->parent->left = y;
-    y->right = x; //Coloca o x à direita de y
-    x->parent = y;
-}
-
-//Funções para imprimir a árvore
-void central(Node *tree){
-    if(!(tree == NULL)){
-        central(tree->left); 
-        printf("%d  ", tree->record.key);
-        central(tree->right); 
+void preOrdemColor(Node *trav){
+    if(!(trav == NULL)){
+		if(trav->color == Black){
+		printf("Black: ");
+		}
+		else if(trav->color == Red){
+		printf("Red: ");
+		}
+        printf("%s\n", trav->record.word);
+        preOrdemColor(trav->l);
+        preOrdemColor(trav->r);
     }
 }
 
-void preOrdem(Node *tree){
-    if(!(tree == NULL)){
-        printf("%d  ", tree->record.key);
-        preOrdem(tree->left);
-        preOrdem(tree->right);
+void posOrdemColor(Node *trav){
+    if(!(trav == NULL)){
+        posOrdemColor(trav->l);
+        posOrdemColor(trav->r);
+		if(trav->color == Black){
+		printf("Black: ");
+		}
+		else if(trav->color == Red){
+		printf("Red: ");
+		}
+        printf("%s\n", trav->record.word);
     }
 }
 
-void posOrdem(Node *tree){
-    if(!(tree == NULL)){
-        posOrdem(tree->left);
-        posOrdem(tree->right);
-        printf("%d  ", tree->record.key);
-    }
-}
-
-//Funções para imprimir apenas as cores da árvore
-void centralColor(Node *tree){
-    if(!(tree == NULL)){
-        centralColor(tree->left); 
-        if(tree->color == true)
-            printf("Red, ");
-        else
-            printf("Black, ");
-        centralColor(tree->right); 
-    }
-}
-
-void preOrdemColor(Node *tree){
-    if(!(tree == NULL)){
-        if(tree->color == true)
-            printf("Red, ");
-        else
-            printf("Black, ");
-        preOrdemColor(tree->left);
-        preOrdemColor(tree->right);
-    }
-}
-
-void posOrdemColor(Node *tree){
-    if(!(tree == NULL)){
-        posOrdemColor(tree->left);
-        posOrdemColor(tree->right);
-        if(tree->color == true)
-            printf("Red, ");
-        else
-            printf("Black, ");
-    }
-}
-
-int main(){
-    int n = 7; 
-    int a[7] = { 7, 6, 5, 4, 3, 2, 1 }; 
-    Node *tree = NULL;
-
-    for(int i=0;i<n;i++){
-        Node *aux = newNode(a[i]);
-        insert(&tree, aux);
-    }
-    central(tree);
-    printf("\n");
-    centralColor(tree);
-    printf("\n");
-    return 0;
-}
+void print2DUtil(Node *root, int space) 
+{ 
+    // Base case 
+    if (root == NULL) 
+        return; 
+  
+    // Increase distance between levels 
+    space += COUNT; 
+  
+    // Process right child first 
+    print2DUtil(root->r, space); 
+  
+    // Print current node after space 
+    // count 
+    printf("\n"); 
+    for (int i = COUNT; i < space; i++){
+        printf("  "); 
+	}
+	if(root->color == Black){
+		printf("Black: ");
+	}
+	else if(root->color == Red){
+		printf("Red: ");
+	}
+    printf("%c%c%c\n", root->record.word[0],root->record.word[1],root->record.word[2]); 
+  
+    // Process left child 
+    print2DUtil(root->l, space); 
+} 
+  
+// Wrapper over print2DUtil() 
+void print2D(Node *root) 
+{ 
+   // Pass initial space count as 0 
+   print2DUtil(root, 0); 
+} 
